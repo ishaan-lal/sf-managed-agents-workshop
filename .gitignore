@@ -1,0 +1,13 @@
+# The original retail dataset (99 MB) from the earlier analyst version.
+/retail.db
+
+# Secrets, never commit real API keys.
+.env
+.env.*
+!.env.example
+
+# Build output, virtualenvs, caches.
+.mda/
+.venv/
+__pycache__/
+.DS_Store
