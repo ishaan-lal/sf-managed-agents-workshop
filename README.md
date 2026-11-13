@@ -99,7 +99,7 @@ Open `starter/` and look around. These files are provided:
 | `middleware/checkout.py` | Clones your fork into the sandbox before every turn (it does nothing until step 2) |
 | `instructions.md` | Patch's system prompt: its job, how to work, how to reply |
 | `skills/` | Procedures Patch loads only when a task needs them |
-| `tools/mcp.py` | The MCP servers Patch gets tools from: GitHub and web search |
+| `tools/mcp.py` | The MCP server Patch gets its GitHub tools from |
 | `github_headers.py` | A workaround for GitHub's MCP server. Leave it alone |
 
 Each blank is marked `TODO(step 1)`. There are five.
@@ -157,9 +157,8 @@ matches. Two skills are written (`fix-a-bug`, `open-a-pull-request`). Read
 
 ### `tools/mcp.py`
 
-**MCP servers** are remote tool providers. `tools/mcp.py` declares two:
-GitHub's server (branches, commits, PRs) and web search. GitHub's server has
-about 46 tools. Fewer tools means fewer ways to go wrong, so Patch gets only
+**MCP servers** are remote tool providers. `tools/mcp.py` declares one:
+GitHub's server, for branches, commits and PRs. It has about 46 tools. Fewer tools means fewer ways to go wrong, so Patch gets only
 the four it needs.
 
 **How to set it up:** set `include_tools` to these four names:
@@ -661,6 +660,7 @@ first. Then delete the `patch-github` connection
 | Any `mda` command: `LangSmith rejected LANGSMITH_API_KEY … (HTTP 403)` | An old key exported in your shell overrides `.env`. Run `unset LANGSMITH_API_KEY`, or fix it in your shell profile |
 | Run never pauses before the PR | The `interrupt_on` key must be the full `github_create_pull_request` (one underscore) |
 | A skill never loads | Its folder name must match `name:` in the frontmatter, and the `description` must say when to use it |
+| Scheduled run fails: `user-owned connections require a person principal; service callers cannot own OAuth grants` | `tools/mcp.py` declares a LangSmith managed-tools server (like web search). Scheduled runs can't use those in this version. Remove it and redeploy |
 | Schedule fails to compile | Every value in `define_schedule` must be a literal: no env vars, function calls, or f-strings |
 | Deploy stops: `connections declared by this project are not in the workspace` | Create the connection first (step 3, *Create the connection*). The name must match `tools/mcp.py` exactly |
 | `connections create`: `No deployment named '…' exists in this workspace` | The connection needs a deployment to belong to. Remove the `connection` line from `tools/mcp.py`, run `uv run mda deploy`, create the connection, then put the line back and redeploy |

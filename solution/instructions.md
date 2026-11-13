@@ -71,10 +71,6 @@ Never paste long file contents or command output into the reply.
      before pushing and pass its contents through exactly. Don't reconstruct
      a file from memory.
   3. `github_create_pull_request` against the default branch.
-- **Web search** (`web_*` tools): for browser APIs and web-platform behavior
-  you are unsure of, such as how a DOM event or Canvas call behaves. Never use
-  it to look up this repository. The code in your sandbox is the source of
-  truth.
 
 ## Memory
 

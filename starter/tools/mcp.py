@@ -22,12 +22,8 @@ mcp = define_mcp(
             # Patch needs, by their raw names (the README has the table).
             "include_tools": ["TODO"],
         },
-        # Web search that LangSmith runs for you. No API key, no connection.
-        "web": {
-            "transport": "http",
-            "url": "https://api.smith.langchain.com/v1/managed-tools/servers/parallel/mcp",
-        },
     },
-    # If one server is down, start with the others instead of failing the run.
+    # If GitHub's server can't load (e.g. no credentials yet), start without it
+    # instead of failing the run.
     throw_on_load_error=False,
 )
