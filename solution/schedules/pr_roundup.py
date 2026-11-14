@@ -18,7 +18,7 @@ schedule = define_schedule(
     deliver_to={
         "channel": "slack",
         # The Slack channel to post in: channel name > About > Channel ID.
-        # Invite your bot there (`/invite @Patch-<you>`).
+        # Invite your bot there (`/invite @Patch`).
         "to": {"type": "provider_conversation", "conversation_id": "C0000000000"},
     },
 )

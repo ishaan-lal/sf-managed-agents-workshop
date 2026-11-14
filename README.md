@@ -61,7 +61,10 @@ workspace with Managed Agents access, and an Anthropic API key.
 
    The token is Patch's guardrail: whatever anyone says to it, it can only
    touch your fork.
-3. **Join the workshop Slack** (link from your facilitator).
+3. **Create a Slack workspace** of your own at
+   [slack.com/get-started#/createnew](https://slack.com/get-started#/createnew).
+   Patch will live there in step 4. You need to be able to install apps in it,
+   which you can in a workspace you created.
 4. **Fill in `.env`:**
    ```bash
    cd starter
@@ -106,11 +109,10 @@ Each blank is marked `TODO(step 1)`. There are five.
 
 ### `agent.py`
 
-Every agent needs a name. It's also your deployment's name in the shared
-LangSmith workspace, so it has to be different from everyone else's.
+Every agent needs a name. It's also your deployment's name in LangSmith.
 
-**How to set it up:** set `name` to something unique: letters, numbers, `_` or
-`-`, starting with a letter, like `patch-ada`.
+**How to set it up:** set `name` to whatever you like: letters, numbers, `_` or
+`-`, starting with a letter. `patch` works fine.
 
 ### `config.py`
 
@@ -180,8 +182,8 @@ uv run mda dev
 ```
 
 Studio opens in your browser. **In the graph dropdown at the top, pick the one
-named after your agent** (e.g. `patch-ada`). You might see
-`patch-ada--general-purpose`, which you **should not** select.
+named after your agent** (e.g. `patch`). You might see
+`patch--general-purpose`, which you **should not** select.
 
 ### Checkpoint
 
@@ -452,9 +454,8 @@ from managed_deepagents import channels
 channel = channels.slack(name="...", description="...")
 ```
 
-- `name`: everyone's bot lives in the same Slack, so make yours easy to tell
-  apart: `Patch-<your name>`. Use 1–35 characters: letters, numbers, spaces,
-  `_`, `-` or `.`, and no parentheses.
+- `name`: what your bot is called in Slack, e.g. `Patch`. Use 1–35
+  characters: letters, numbers, spaces, `_`, `-` or `.`, and no parentheses.
 - `description`: what your Patch does, up to 139 characters.
 - Optionally, `background_color` for the app icon, like `"#1C3C3C"`.
 
@@ -465,16 +466,16 @@ uv run mda deploy
 ```
 
 The deploy pauses and prints a **Slack link**. Open it in a browser signed in
-to the workshop Slack, install the app, and the deploy continues. When it
+to your Slack workspace, install the app, and the deploy continues. When it
 finishes, your bot DMs you.
 
 ### Checkpoint
 
 In your DM with your bot:
 
-1. **Bug 🐛 1, with a screenshot.** Open your fork's `index.html` in a browser
-   (or grab the screenshot pinned in `#patch-party`), start a game, press
-   **P**, and screenshot the pause screen. Upload it to your bot with:
+1. **Bug 🐛 1, with a screenshot.** Play the game at
+   [ishaan-lal.github.io/simple-game](https://ishaan-lal.github.io/simple-game/),
+   start a game, press **P**, and screenshot the pause screen. Upload it to your bot with:
    > The pause screen tells me to press Space to resume, but Space doesn't unpause it.
 
    It reads the screenshot, finds the hint in **both** `index.html` and
@@ -521,8 +522,10 @@ schedule = define_schedule(
 - `prompt`: list the repo's open PRs with `github_list_pull_requests`, one
   line per PR with title, link and days open. Flag any PR open more than 3
   days. If there are none, say so in one line. **Don't change any code.**
-- `conversation_id`: the `#patch-party` channel ID from the facilitator's
-  slide. Then `/invite` your bot to `#patch-party` so it can post there.
+- `conversation_id`: the ID of the Slack channel to post in. Create a channel
+  in your workspace (e.g. `#patch-roundup`), then open it and go to the
+  channel name → **About** → **Channel ID** (it starts with `C`). Then
+  `/invite` your bot to that channel so it can post there.
 - The build reads this file at compile time **without running it**, so every
   value must be a literal: no environment variables, no function calls, no
   f-strings.
@@ -535,8 +538,7 @@ uv run mda deploy
 
 ### Checkpoint
 
-Within 10 minutes your bot posts your fork's open PRs to `#patch-party`,
-alongside everyone else's.
+Within 10 minutes your bot posts your fork's open PRs to your channel.
 
 ---
 
@@ -664,8 +666,8 @@ first. Then delete the `patch-github` connection
 | Schedule fails to compile | Every value in `define_schedule` must be a literal: no env vars, function calls, or f-strings |
 | Deploy stops: `connections declared by this project are not in the workspace` | Create the connection first (step 3, *Create the connection*). The name must match `tools/mcp.py` exactly |
 | `connections create`: `No deployment named '…' exists in this workspace` | The connection needs a deployment to belong to. Remove the `connection` line from `tools/mcp.py`, run `uv run mda deploy`, create the connection, then put the line back and redeploy |
-| `connections create` returns 403 | Your LangSmith role can't create connections. Ask the facilitator |
-| Deploy waits on Slack forever | Open the printed link signed in to the *workshop* Slack. If it says an admin must approve, ask the facilitator |
+| `connections create` returns 403 | Your LangSmith role can't create connections. Ask your LangSmith workspace admin |
+| Deploy waits on Slack forever | Open the printed link signed in to your Slack workspace. If it says an admin must approve, use a workspace you created (you're its admin) |
 | Bot doesn't answer in a channel | `/invite` it first. In channels it answers @mentions; DMs always work |
 | In Studio, `/workspace/app` doesn't exist, or Patch ignores your instructions | Studio is on the `<name>--general-purpose` graph. Pick the graph named after your agent, then start a new thread |
 | `uv run mda dev` fails with `project.dependencies[0]` must be pep508 | Your project path has a space in it (e.g. `starter copy`). Rename the folder without spaces, delete its `.venv` and `.mda` folders, and run again |

@@ -9,8 +9,7 @@ sends files back with `upload_files`.
 from managed_deepagents import channels
 
 channel = channels.slack(
-    # Everyone's bot lives in the same workshop Slack, so make yours easy to
-    # tell apart, e.g. "Patch-Ishaan".
+    # What your bot is called in your Slack workspace.
     name="Patch",
     description="Fixes bugs and builds small features in the Tetris game, then opens a PR.",
     background_color="#1C3C3C",
