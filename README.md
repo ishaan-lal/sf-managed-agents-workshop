@@ -1,23 +1,12 @@
 # Build Patch: a coding agent that lives in Slack
 
-In this workshop you build **Patch**, a [managed agent](https://docs.langchain.com/langsmith/python/managed-deep-agents-overview)
-that fixes bugs in a small browser game and opens pull requests. You'll
-report a bug in Slack (or drop in a screenshot of it), and Patch will clone the
-code into its own sandbox, find the cause, fix it, verify the fix, ask you to
-approve, and open a PR on GitHub.
+In this workshop, you will build a [managed agent](https://docs.langchain.com/langsmith/python/managed-deep-agents-overview) called **Patch**. The agent's will be able to fix bugs and implement features to a codebase in GitHub. You'll be able to call Patch from Slack, report a bug or feature for the codebase, and the agent will implement the request, and open a PR to the codebase in GitHub. 
 
-Most of Patch is provided in `starter/`, with a few blanks for you to fill in.
-Then you spend the workshop on what makes a managed agent different: a sandbox,
-connections, Slack, and schedules.
+You will be working out of the `starter/` directory, which has a partial implementation of the agent. Throughout the workshop, you will be adding capabilities to the agent.
 
-| Step | You build | Managed agent feature |
-|---|---|---|
-| 1 | Fill-ins in the provided files | The agent, its instructions, skills, and MCP tools |
-| 2 | `sandbox/` | Its own computer, one per conversation |
-| 3 | A connection, `interrupt_on`, a deploy | Credentials kept out of code, human approval, hosting |
-| 4 | `channels/slack.py` | Patch in Slack |
-| 5 | `schedules/` | A PR roundup it posts on its own |
-| 6 *(optional)* | `memory.py` | Memory across conversations: shared and per-person |
+## The Codebase
+
+Patch will fix bugs and implement features to a small browser Tetris game. You can view [the repo](https://github.com/ishaan-lal/simple-game/) and/or play around with the game [here](ishaan-lal.github.io/simple-game).
 
 ## What's in this repo
 
@@ -28,11 +17,22 @@ solution/     <- the finished Patch (the answer key). Try each step first, then 
 
 ---
 
-## 0. Before you start
+# 0. Before you start
 
-You need [uv](https://docs.astral.sh/uv/getting-started/installation/), a
-GitHub account, a [LangSmith](https://smith.langchain.com) API key for a
-workspace with Managed Agents access, and an Anthropic API key.
+
+### Install the tools
+
+| Tool | Why | Check it |
+|---|---|---|
+| **uv** (required) | Runs everything in this workshop. `uv run mda …` uses the `mda` CLI from the project, and uv downloads the right Python for you. | `uv --version` |
+| **git** | To clone this repo | `git --version` |
+| **A code editor** | You'll edit Python and Markdown files | |
+| **Chrome or Firefox** | For LangSmith Studio, GitHub, and Slack. Safari can block Studio's connection to your local agent | |
+
+
+**Install uv** by following the instructions [here](https://docs.astral.sh/uv/getting-started/installation/)
+
+### Set up your accounts and project
 
 1. The code for the game exists here: [ishaan-lal/simple-game](https://github.com/ishaan-lal/simple-game). **Create a fork of the repo**, and keep it **public**.
 2. **Make a GitHub token for your fork only.** Open
@@ -52,27 +52,17 @@ workspace with Managed Agents access, and an Anthropic API key.
    Leave everything else alone. *Metadata: Read-only* turns on by itself.
    Click **Generate token** and copy it now, because GitHub shows it only once.
 
-   > **Check both permissions before you generate.** New tokens start out
-   > read-only. A read-only token still lets Patch clone and read your fork,
-   > so nothing looks wrong until it tries to open a PR and gets
-   > `403 Resource not accessible by personal access token`. If that happens,
-   > edit the token on GitHub and fix the permissions. The token value
-   > doesn't change, so you don't need to update `.env` or the connection.
-
-   The token is Patch's guardrail: whatever anyone says to it, it can only
-   touch your fork.
-3. **Create a Slack workspace** of your own at
-   [slack.com/get-started#/createnew](https://slack.com/get-started#/createnew).
-   Patch will live there in step 4. You need to be able to install apps in it,
-   which you can in a workspace you created.
-4. **Fill in `.env`:**
+3. **Fill in `.env`:**
    ```bash
    cd starter
-   uv sync
+   uv sync                  # downloads Python 3.14 and the dependencies
+   uv run mda --version     # should print mda 0.10.2
    cp .env.example .env
    ```
    Fill in `LANGSMITH_API_KEY`, `ANTHROPIC_API_KEY`, and `MDA_DEV_PATCH_GITHUB`
-   (the token). You'll fill in `PATCH_REPO` in step 1.
+   (from step 2). You'll fill in `PATCH_REPO` in step 1.
+
+   If `uv run mda --version` printed `mda 0.10.2`, your machine is ready.
 
 
 ### The bug board
@@ -88,17 +78,16 @@ Your fork has real bugs planted in it. You'll point Patch at them as you go:
 
 ---
 
-## Step 1: Set up the base
+# Step 1: Set up the base
 
-**Goal:** Patch knows its job, has its procedures, and has its tools declared.
-Most of that is already written in `starter/`. You fill in a few blanks.
+**Goal:** In this step, you'll configure the brain of the agent, by telling Patch what its job is, its procedure, and define any tools it can use.
 
 Open `starter/` and look around. These files are provided:
 
 | File | What it is |
 |---|---|
 | `agent.py` | The agent definition: its name, model, and middleware. The only required file |
-| `config.py` | The one place that names your fork |
+| `config.py` | Holds constants used throughout the agent |
 | `middleware/checkout.py` | Clones your fork into the sandbox before every turn (it does nothing until step 2) |
 | `instructions.md` | Patch's system prompt: its job, how to work, how to reply |
 | `skills/` | Procedures Patch loads only when a task needs them |
@@ -107,63 +96,71 @@ Open `starter/` and look around. These files are provided:
 
 Each blank is marked `TODO(step 1)`. There are five.
 
+## Step 1.1
+
 ### `agent.py`
 
 Every agent needs a name. It's also your deployment's name in LangSmith.
 
-**How to set it up:** set `name` to whatever you like: letters, numbers, `_` or
+**YOUR TASK:** set `name` to whatever you like: letters, numbers, `_` or
 `-`, starting with a letter. `patch` works fine.
 
+## Step 1.2
 ### `config.py`
 
 `config.py` holds two constants that other files import: `REPO` (your fork,
 which the checkout middleware clones) and `CHECKOUT` (where it's cloned to).
 Your fork's name differs per person, so it lives in `.env`, not in code.
 
-**How to set it up:**
+**YOUR TASK:**
 
-1. Open `starter/.env` and set:
+1. Ensure that you have forked [the repo containing the code for the game](https://github.com/ishaan-lal/simple-game/).
+2. Open `starter/.env` and set `PATCH_REPO` to the forked repo. For example, yours will likely be:
    ```bash
    PATCH_REPO=<your-github-username>/simple-game
    ```
-2. In `config.py`, `REPO` reads it with `os.environ.get("TODO", "")`. Replace
-   `"TODO"` with the key you just set.
+3. In `config.py`, `REPO` reads it with `os.environ.get("TODO", "")`. Replace
+   `"TODO"` with the name of key you just set (`PATCH_REPO`).
+
+
+## Step 1.3
 
 ### `instructions.md`
 
-This is Patch's system prompt, and it's where Patch's judgment comes from.
-Most of it is written: its job, its workspace, how to classify a request, how
-to use its tools, and how to reply. Read it.
+This file contains the information that the agent will receive at every turn of the conversation.
+Here, we describe its job, its workspace, how to classify a request, how to use its tools, etc.
 
-**How to set it up:** fill in the two sections marked `TODO(step 1)`. Replace
-each `<!-- ... -->` comment with your own text, written to Patch ("Run...",
-"Never..."):
+**YOUR TASK:** **Read** through the instructions, and **write instructions** for the two sections that need details:
 
 - **Verifying your change.** The game has no test suite, so how should Patch
   check its work before saying it's done? The comment has guiding questions.
 - **Rules.** Two or three rules about scope: what Patch should never do while
   fixing something.
 
+## Step 1.4
+
 ### `skills/add-a-feature/SKILL.md`
 
-A **skill** is a procedure written in Markdown. At startup Patch sees only each
-skill's `name` and `description`, and it reads the full file only when a task
-matches. Two skills are written (`fix-a-bug`, `open-a-pull-request`). Read
-`fix-a-bug`, then open `skills/add-a-feature/SKILL.md` and fill in that skill!
+Agents use **skills** to help them complete repeatable tasks. A skill is a procedure written in 
+Markdown. Two skills are written (`fix-a-bug`, `open-a-pull-request`), read through both to understand
+how a skill is written.
 
-**How to set it up:**
+The "Add a feature" skill at `skills/add-a-feature/SKILL.md` still needs to be written. It's your job to fill in that skill.
 
-- `description`: the **only** thing Patch reads when deciding whether to load
+**YOUR TASK:**
+
+- Write the `description` frontmatter: the **only** thing Patch reads when deciding whether to load
   the skill, so say exactly when it applies. Copy the shape of `fix-a-bug`'s.
-- The steps: 4–6 numbered steps. The comment lists what a good procedure covers.
+- The steps: 4–6 numbered steps. The comment in the skill file lists what a good procedure covers.
+
+## Step 1.5
 
 ### `tools/mcp.py`
 
-**MCP servers** are remote tool providers. `tools/mcp.py` declares one:
-GitHub's server, for branches, commits and PRs. It has about 46 tools. Fewer tools means fewer ways to go wrong, so Patch gets only
-the four it needs.
+**MCP servers** are remote tool providers. The agent needs to be able to access GitHub so that it can write PRs to the repo.
+`tools/mcp.py` declares the MCP servers, and contains one for GitHub.
 
-**How to set it up:** set `include_tools` to these four names:
+**YOUR TASK:** GitHub's MCP server exposes dozens of tools, we'll limit the tools that we need by setting `include_tools` to these four names:
 
 | Tool | What Patch uses it for |
 |---|---|
@@ -187,9 +184,8 @@ named after your agent** (e.g. `patch`). You might see
 
 ### Checkpoint
 
-Patch has no computer yet, so it can't touch the game. But it already knows
-everything you set up. Ask each question in a **new thread** and check the
-answer against your files.
+Query your agent to test the behavior that you just configured. Note that the agent does not yet have access to the code itself or the ability to write code. So we are currently only able to test its defined behavior.
+Test your agent on the following queries:
 
 **Your instructions:**
 
@@ -200,7 +196,7 @@ It describes its job and the bug-versus-feature rule from `instructions.md`.
 > Before you tell me a change is done, how do you check it?
 
 It describes the checks **you** wrote in *Verifying your change*. If the answer
-is vague, so is your section.
+is vague, then that section in `instructions.md` can be improved upon.
 
 **Your skills:**
 
@@ -228,9 +224,11 @@ the checkout middleware clones your fork.
 
 ---
 
-## Step 2: Give it a computer (sandbox)
+# Step 2: Give it a computer (sandbox)
 
 **Goal:** To fix bugs and implement features, Patch needs the ability to write and run code. We provide this with a sandbox!
+
+## Step 2.1
 
 ### `sandbox/__init__.py`
 
@@ -239,29 +237,29 @@ it on. With it, every conversation (thread) gets its own isolated machine, so
 Patch can run real commands, and two people's work never collides. Sandboxes
 cost resources while they're up, so you also tell it when to clean up.
 
-**How to set it up:** create a `sandbox/` folder at the root of `starter/`,
+**YOUR TASK:** create a `sandbox/` folder at the root of `starter/`,
 and in it an `__init__.py` that exports a variable named `sandbox`:
 
 ```python
 from managed_deepagents import define_sandbox
 
-sandbox = define_sandbox(idle_ttl_seconds=..., default_timeout=...)
+sandbox = define_sandbox(idle_ttl_seconds=1800, default_timeout=300)
 ```
 
-- `idle_ttl_seconds`: delete a sandbox after **30 minutes** without activity.
-- `default_timeout`: stop any single shell command after **5 minutes**, so a
+- `idle_ttl_seconds=1800`: delete a sandbox after **30 minutes** (1800 seconds) without activity.
+- `default_timeout=300`: stop any single shell command after **5 minutes** (300 seconds), so a
   hung command can't stall Patch forever.
 
 ### `sandbox/setup.sh`
 
 A fresh sandbox is a bare machine. Patch needs `git` to clone the game and
 read its diffs, and `node` to check its JavaScript with `node --check`. The
-game has no test suite, so `node --check` is how Patch catches syntax errors.
-`setup.sh` installs that tooling.
+game has no test suite, so `node --check` is how Patch catches syntax errors. 
 
-It runs **once**, when the sandbox snapshot is built (on `uv run mda dev` or
-`uv run mda deploy`), not once per conversation. Every new thread starts from
-that snapshot, so tooling is already installed and threads start fast.
+Normally, the agent would have to tell the sandbox to install those tools (`git`, `node`). But a setup script (`setup.sh`) helps install that tooling.
+
+The script runs **once** when the sandbox snapshot is built, and every new thread starts from that snapshot, so tooling is already installed in the sandbox!
+
 
 **How to set it up:** create `sandbox/setup.sh` with this script:
 
@@ -289,25 +287,37 @@ mkdir -p /workspace
   image. If nothing is missing, this part is skipped.
 - **`mkdir -p /workspace`** creates the folder the game gets cloned into.
 
-Put tooling only in here. No repo code, because it would go stale in the
-snapshot, and never any secrets.
-
+## Step 2.2
 ### Middleware
 
-Open up `middleware/checkout.py`. The middleware has been written for you. The `@before_agent` decorator indicates when the function will be fired, and the contents of the function is what occurs. In this case, the middleware function is cloning the git repo of the codebase.
+Patch has a computer now, but nothing to work on. Next, we give it the game's
+code. The code belongs in the sandbox, where Patch can edit it and check its
+changes. And it should be there every time, before Patch does anything, so we
+use **middleware** rather than asking the model to clone it.
 
-In `agent.py`, see that the `middleware` parameter is set for you, so everything is already wired together.
+Open `middleware/checkout.py`. It's written for you:
+
+- **`@before_agent`** says *when* the function runs: at the start of every
+  turn, before the model is called.
+- **The function body** says *what* runs: it clones your fork into
+  `/workspace/app`. If the repo is already there, it skips the clone, so each
+  thread clones once and keeps its edits across follow-up messages.
 
 
-### Checkpoint
+Middleware is plain Python, so `agent.py` has to import it. That's already
+done: `middleware=[ensure_checkout]` wires it in.
+
+**YOUR TASK**: Ensure you understand the middleware function and verify that it is hooked into `agent.py`
+
+
+## Step 2 Checkpoint
 
 Restart `uv run mda dev` (the first start builds the snapshot, so give it a
 minute), then in a new thread:
 
 > What's in /workspace/app? Show me the latest commit.
 
-It's your fork. In the trace, `ensure_checkout` runs before the first model
-call. Now test the instructions you wrote:
+This time, the middleware should have fired, the agent has access to the repo, and your fork should appear in the answer.
 
 > Rename the "New game" button to "Restart". Don't open a pull request. Just make the change and tell me how you checked it.
 
@@ -324,7 +334,7 @@ see each other's half-finished edits.
 
 ---
 
-## Step 3: Deploy it, and connect it to GitHub
+# Step 3: Deploy it, and connect it to GitHub
 
 **Goal:** We've given our agent code-writing capabilities, but it still needs the ability to push code to GitHub so as to directly improve the codebase! In this step, we'll configure a connection for the GitHub MCP. 
 
@@ -343,35 +353,42 @@ A connection is either:
 - **User-scoped** (`{"type": "user"}`): each person connects their own
   account, usually through OAuth, and Patch acts as them. See *Going further*.
 
+## Step 3.1
+
 ### Deploy
 
 So far Patch has run on your laptop. Deploying runs the same project in
-LangSmith: it builds the sandbox snapshot and hosts the agent. Nothing in the
-code changes. Deploy now, before you touch `tools/mcp.py`. In your second
+LangSmith: it builds the sandbox snapshot and hosts the agent. In your
 terminal, in `starter/`:
 
 ```bash
 uv run mda deploy
 ```
 
-The first deploy takes a few minutes. Later deploys are faster.
+The first deploy takes a few minutes. When the agent is finished deploying, it will be available in LangSmith under `All Agents`.
+
+## Step 3.2
 
 ### Create the connection
 
-An agent-scoped connection belongs to a deployment, which is why you deployed
-first: now there's a deployment to attach it to. Store your token in LangSmith.
-The first argument, `patch-github`, is the connection's **name**:
+Now, we'll create the connection. We provide a **name** for the connection, as well as the **secret value** itself.
+
+**YOUR TASK**: From `starter/`, run: 
 
 ```bash
 uv run mda connections create patch-github --secret-from-env MDA_DEV_PATCH_GITHUB
 ```
 
-`--secret-from-env` copies the token from `MDA_DEV_PATCH_GITHUB` in `.env`, so
-you never paste it on the command line.
+`patch-github` is the name of the connection. 
+`--secret-from-env` obtains the secret value by copying the token from `MDA_DEV_PATCH_GITHUB` in `.env`.
+
+## Step 3.3
 
 ### `tools/mcp.py`: add the connection
 
-**How to set it up:** give the `github` server its credential. Add
+We defined the GitHub MCP server in `tools/mcp.py`, but it needs to use your connection secret to utilize the tools. 
+
+**YOUR TASK:** give the `github` MCP server its credential. Add
 `connections` to the import, and this line where the `TODO(step 3)` is:
 
 ```python
@@ -388,12 +405,13 @@ from managed_deepagents import connections, define_mcp
 
 Now, the GitHub credential (PAT) will be passed when the MCP server is called, allowing your agent to utilize the tools that the GitHub MCP exposes.
 
+## Step 3.4
 ### `agent.py`: approve before a PR opens
 
 Ideally, the agent will pause and ask us to confirm a PR before it writes it. Simply including "ask before opening a PR" in the prompt is a request that the model could skip. So we'll configure Human-in-the-Loop through `interrupt_on`: the runtime pauses the run right before the tool call and waits for a person to approve or reject it.
 
 
-**How to set it up:** where the `TODO(step 3)` is, add:
+**YOUR TASK:** where the `TODO(step 3)` is, add:
 
 ```python
 interrupt_on={
@@ -414,7 +432,7 @@ uv run mda deploy
 The deploy checks that every connection the project declares exists in
 LangSmith. `patch-github` does now, so it goes through.
 
-### Checkpoint
+## Step 3 Checkpoint
 
 In LangSmith, open **Agent Servers**, find your agent by name, and open it in
 **Studio**. Pick your agent's graph, and send bug 🐛 2:
@@ -445,7 +463,7 @@ creates and installs the app for you. Patch's instructions already have a
 *Slack* section: files people attach land in `/workspace/attachments/`, and it
 sends the diff back with `upload_files`.
 
-**How to set it up:** create a `channels/` folder at the root of `starter/`,
+**YOUR TASK:** create a `channels/` folder at the root of `starter/`,
 and in it `slack.py`, which exports a variable named `channel`:
 
 ```python
@@ -469,11 +487,11 @@ The deploy pauses and prints a **Slack link**. Open it in a browser signed in
 to your Slack workspace, install the app, and the deploy continues. When it
 finishes, your bot DMs you.
 
-### Checkpoint
+## Step 4 Checkpoint
 
 In your DM with your bot:
 
-1. **Bug 🐛 1, with a screenshot.** Play the game at
+1. **Bug 🐛 1, with a screenshot.** Play the game by opening up `index.html` locally or play online at
    [ishaan-lal.github.io/simple-game](https://ishaan-lal.github.io/simple-game/),
    start a game, press **P**, and screenshot the pause screen. Upload it to your bot with:
    > The pause screen tells me to press Space to resume, but Space doesn't unpause it.
@@ -500,15 +518,14 @@ Everything so far starts when someone sends a message. A **schedule** runs
 Patch on a timer with a fixed prompt and posts the result to Slack, which
 suits routine jobs like a PR roundup. The file name is the schedule's name.
 
-**How to set it up:** create a `schedules/` folder at the root of `starter/`,
+**YOUR TASK:** create a `schedules/` folder at the root of `starter/`,
 and in it `pr_roundup.py`, which exports a variable named `schedule`:
 
 ```python
 from managed_deepagents import define_schedule
 
 schedule = define_schedule(
-    cron="...",                       # 5 fields: minute hour day month weekday
-    timezone="America/Los_Angeles",
+    cron="*/10 * * * *",                       
     prompt="...",
     deliver_to={
         "channel": "slack",
@@ -517,18 +534,14 @@ schedule = define_schedule(
 )
 ```
 
-- `cron`: run it **every 10 minutes** for the workshop, so you can watch it
-  fire. (Normally you'd run it on weekday mornings.)
-- `prompt`: list the repo's open PRs with `github_list_pull_requests`, one
-  line per PR with title, link and days open. Flag any PR open more than 3
-  days. If there are none, say so in one line. **Don't change any code.**
+- `cron`: a cron expression that specifies the cadence that the schedule will run at. In this case, it is set to every 10 minutes.
+- `prompt`: the message that the agent will receive at schedule time. **Fill this in** by telling the 
+agent to list the repo's open PRs with `github_list_pull_requests`, one line per PR with title, link and days open. 
+Flag any PR open more than 3 days. 
 - `conversation_id`: the ID of the Slack channel to post in. Create a channel
   in your workspace (e.g. `#patch-roundup`), then open it and go to the
   channel name → **About** → **Channel ID** (it starts with `C`). Then
-  `/invite` your bot to that channel so it can post there.
-- The build reads this file at compile time **without running it**, so every
-  value must be a literal: no environment variables, no function calls, no
-  f-strings.
+  `/invite` your bot to that channel so it can post there. Call over a workshop instructor if you are having trouble!
 
 ### Redeploy
 
@@ -536,9 +549,9 @@ schedule = define_schedule(
 uv run mda deploy
 ```
 
-### Checkpoint
+## Step 5 Checkpoint
 
-Within 10 minutes your bot posts your fork's open PRs to your channel.
+Communicate with your agent in Slack! Send some of the queries and requests from before!
 
 ---
 
@@ -651,6 +664,9 @@ first. Then delete the `patch-github` connection
 
 | Symptom | Fix |
 |---|---|
+| `uv: command not found` | Install uv (step 0), then **open a new terminal**. Still missing? Run the PATH command the installer printed |
+| `uv sync` is very slow or times out | Shared Wi-Fi. Retry, or tether to your phone. Next time, run it before the workshop |
+| `uv sync` fails behind a corporate proxy or VPN | Set `HTTPS_PROXY`, or disconnect the VPN for the install |
 | `uv run mda dev` fails building the sandbox | Read the `setup.sh` output. Check your workspace has sandbox access |
 | "Set PATCH_REPO in .env" | Add your fork, as `owner/name`, to `.env`, and check `config.py` reads `PATCH_REPO` (step 1) |
 | "Could not clone … into the sandbox" | Check `PATCH_REPO`'s spelling, and that your fork is public |
