@@ -24,13 +24,11 @@ solution/     <- the finished Patch (the answer key). Try each step first, then 
 
 | Tool | Why | Check it |
 |---|---|---|
-| **uv** (required) | Runs everything in this workshop. `uv run mda …` uses the `mda` CLI from the project, and uv downloads the right Python for you. | `uv --version` |
+| **uv** (required) | Package manager, install [here](https://docs.astral.sh/uv/getting-started/installation/) | `uv --version` |
 | **git** | To clone this repo | `git --version` |
 | **A code editor** | You'll edit Python and Markdown files | |
 | **Chrome or Firefox** | For LangSmith Studio, GitHub, and Slack. Safari can block Studio's connection to your local agent | |
 
-
-**Install uv** by following the instructions [here](https://docs.astral.sh/uv/getting-started/installation/)
 
 ### Set up your accounts and project
 
