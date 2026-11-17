@@ -6,7 +6,7 @@ You will be working out of the `starter/` directory, which has a partial impleme
 
 ## The Codebase
 
-Patch will fix bugs and implement features to a small browser Tetris game. You can view [the repo](https://github.com/ishaan-lal/simple-game/) and/or play around with the game [here](ishaan-lal.github.io/simple-game).
+Patch will fix bugs and implement features to a small browser Tetris game. You can view [the repo](https://github.com/ishaan-lal/simple-game/) and/or play around with the game [here](https://ishaan-lal.github.io/simple-game).
 
 ## What's in this repo
 
