@@ -33,17 +33,16 @@ solution/     <- the finished Patch (the answer key). Try each step first, then 
 ### Set up your accounts and project
 
 1. The code for the game exists here: [ishaan-lal/simple-game](https://github.com/ishaan-lal/simple-game). **Create a fork of the repo**, and keep it **public**.
-2. **Fill in `.env`:**
+2. **Create `.env` file:**
    ```bash
    cd starter
    uv sync                  # downloads Python 3.14 and the dependencies
    uv run mda --version     # should print mda 0.10.2
    cp .env.example .env
    ```
-   Fill in `LANGSMITH_API_KEY` and `ANTHROPIC_API_KEY`. You'll fill in
-   `PATCH_REPO` in step 1 and `MDA_DEV_PATCH_GITHUB` in step 3.
 
-   If `uv run mda --version` printed `mda 0.10.2`, your machine is ready.
+3. Open `.env` and paste the `ANTHROPIC_API_KEY` provided to you.
+4. The `LANGSMITH_API_KEY` is provisioned by LangSmith. Visit [workspaces.langchain.com](https://workspaces.langchain.com/), fill in the email account associated with your LangSmith account, and set `Workshop Code` to `mda-11-17`, and click `Create workspace`. You will receive an email inviting you to a LangSmith workspace. In LangSmith, visit the Settings page, click `API Keys` on the left menu, and create a new key. Paste the value for `LANGSMITH_API_KEY` in `.env`.
 
 
 ### The bug board
