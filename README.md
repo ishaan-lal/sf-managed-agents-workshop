@@ -33,32 +33,15 @@ solution/     <- the finished Patch (the answer key). Try each step first, then 
 ### Set up your accounts and project
 
 1. The code for the game exists here: [ishaan-lal/simple-game](https://github.com/ishaan-lal/simple-game). **Create a fork of the repo**, and keep it **public**.
-2. **Make a GitHub token for your fork only.** Open
-   [github.com/settings/personal-access-tokens/new](https://github.com/settings/personal-access-tokens/new)
-   (GitHub → *Settings → Developer settings → Personal access tokens →
-   Fine-grained tokens → Generate new token*) and fill it in:
-
-   | Field | Set it to |
-   |---|---|
-   | *Token name* | `patch-workshop` |
-   | *Expiration* | 30 days (anything past the workshop) |
-   | *Resource owner* | Your own account |
-   | *Repository access* | **Only select repositories** → pick your fork |
-   | *Repository permissions* → **Contents** | **Read and write** |
-   | *Repository permissions* → **Pull requests** | **Read and write** |
-
-   Leave everything else alone. *Metadata: Read-only* turns on by itself.
-   Click **Generate token** and copy it now, because GitHub shows it only once.
-
-3. **Fill in `.env`:**
+2. **Fill in `.env`:**
    ```bash
    cd starter
    uv sync                  # downloads Python 3.14 and the dependencies
    uv run mda --version     # should print mda 0.10.2
    cp .env.example .env
    ```
-   Fill in `LANGSMITH_API_KEY`, `ANTHROPIC_API_KEY`, and `MDA_DEV_PATCH_GITHUB`
-   (from step 2). You'll fill in `PATCH_REPO` in step 1.
+   Fill in `LANGSMITH_API_KEY` and `ANTHROPIC_API_KEY`. You'll fill in
+   `PATCH_REPO` in step 1 and `MDA_DEV_PATCH_GITHUB` in step 3.
 
    If `uv run mda --version` printed `mda 0.10.2`, your machine is ready.
 
@@ -369,7 +352,25 @@ The first deploy takes a few minutes. When the agent is finished deploying, it w
 
 ### Create the connection
 
-Now, we'll create the connection. We provide a **name** for the connection, as well as the **secret value** itself.
+Now, we'll create the connection. We provide a **name** for the connection, as well as the **secret value** itself. The secret is a GitHub token, so let's make one first.
+
+**Make a GitHub token for your fork only.** Open
+[github.com/settings/personal-access-tokens/new](https://github.com/settings/personal-access-tokens/new)
+(GitHub → *Settings → Developer settings → Personal access tokens →
+Fine-grained tokens → Generate new token*) and fill it in:
+
+| Field | Set it to |
+|---|---|
+| *Token name* | `patch-workshop` |
+| *Expiration* | 30 days (anything past the workshop) |
+| *Resource owner* | Your own account |
+| *Repository access* | **Only select repositories** → pick your fork |
+| *Repository permissions* → **Contents** | **Read and write** |
+| *Repository permissions* → **Pull requests** | **Read and write** |
+
+Leave everything else alone. *Metadata: Read-only* turns on by itself.
+Click **Generate token** and copy it now, because GitHub shows it only once.
+Paste it into `.env` as `MDA_DEV_PATCH_GITHUB`.
 
 **YOUR TASK**: From `starter/`, run: 
 
@@ -670,7 +671,7 @@ first. Then delete the `patch-github` connection
 | "Could not clone … into the sandbox" | Check `PATCH_REPO`'s spelling, and that your fork is public |
 | No `github_*` tools in the trace | Check `include_tools` uses the raw names (`create_branch`, not `github_create_branch`). Locally, check `MDA_DEV_PATCH_GITHUB` is set in `.env`; deployed, check the `connection` line from step 3 and the `patch-github` connection |
 | `403 Resource not accessible by personal access token` | The token is read-only. On GitHub, edit it: **Contents** and **Pull requests** → Read and write. Same token value, so nothing else to update |
-| GitHub `401`, or logs say `MCP server "github" failed to load … rejected by its server` | The token is expired or wrong. Make a new one (*Before you start*, item 2), put it in `.env`, then delete and recreate the `patch-github` connection |
+| GitHub `401`, or logs say `MCP server "github" failed to load … rejected by its server` | The token is expired or wrong. Make a new one (step 3.2), put it in `.env`, then delete and recreate the `patch-github` connection |
 | GitHub `404` on your repo | The token doesn't include your fork (*Repository access*), or `PATCH_REPO` is misspelled |
 | `header mismatch: missing Mcp-Param-owner header` | The `github` server in `tools/mcp.py` is missing its provided `"headers": GITHUB_HEADERS` line. Put it back |
 | Any `mda` command: `LangSmith rejected LANGSMITH_API_KEY … (HTTP 403)` | An old key exported in your shell overrides `.env`. Run `unset LANGSMITH_API_KEY`, or fix it in your shell profile |
