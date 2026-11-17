@@ -43,6 +43,7 @@ solution/     <- the finished Patch (the answer key). Try each step first, then 
 
 3. Open `.env` and paste the `ANTHROPIC_API_KEY` provided to you.
 4. The `LANGSMITH_API_KEY` is provisioned by LangSmith. Visit [workspaces.langchain.com](https://workspaces.langchain.com/), fill in the email account associated with your LangSmith account, and set `Workshop Code` to `mda-11-17`, and click `Create workspace`. You will receive an email inviting you to a LangSmith workspace. In LangSmith, visit the Settings page, click `API Keys` on the left menu, and create a new key. Paste the value for `LANGSMITH_API_KEY` in `.env`.
+5. Still on the LangSmith Settings page, copy your **Workspace ID** and paste it as `LANGSMITH_WORKSPACE_ID` in `.env`. The `mda connections` commands in step 3 need it.
 
 
 ### The bug board
@@ -149,20 +150,20 @@ The "Add a feature" skill at `skills/add-a-feature/SKILL.md` still needs to be w
 | `create_pull_request` | Open the PR |
 | `list_pull_requests` | List open PRs (the schedule in step 5 uses it) |
 
-Patch sees each one as `<server>_<tool>`, e.g. `github_create_branch`. The
-GitHub server has no credentials yet. You'll add them in step 3.
+Though we've defined the GitHub MCP, we can't use it yet because it requires a credential. We'll add this in step 3.
 
 ### Run it
 
 ```bash
+cd starter/
 uv run mda dev
 ```
 
-Studio opens in your browser. **In the graph dropdown at the top, pick the one
+LangSmith Studio opens in your browser. **In the graph dropdown at the top, pick the one
 named after your agent** (e.g. `patch`). You might see
 `patch--general-purpose`, which you **should not** select.
 
-### Checkpoint
+## Step 1 Checkpoint
 
 Query your agent to test the behavior that you just configured. Note that the agent does not yet have access to the code itself or the ability to write code. So we are currently only able to test its defined behavior.
 Test your agent on the following queries:
@@ -371,7 +372,10 @@ Leave everything else alone. *Metadata: Read-only* turns on by itself.
 Click **Generate token** and copy it now, because GitHub shows it only once.
 Paste it into `.env` as `MDA_DEV_PATCH_GITHUB`.
 
-**YOUR TASK**: From `starter/`, run: 
+**YOUR TASK**: 
+1. Paste the token you just copied into `.env` as `MDA_DEV_PATCH_GITHUB`.
+
+2. From `starter/`, run: 
 
 ```bash
 uv run mda connections create patch-github --secret-from-env MDA_DEV_PATCH_GITHUB
@@ -673,6 +677,7 @@ first. Then delete the `patch-github` connection
 | GitHub `401`, or logs say `MCP server "github" failed to load … rejected by its server` | The token is expired or wrong. Make a new one (step 3.2), put it in `.env`, then delete and recreate the `patch-github` connection |
 | GitHub `404` on your repo | The token doesn't include your fork (*Repository access*), or `PATCH_REPO` is misspelled |
 | `header mismatch: missing Mcp-Param-owner header` | The `github` server in `tools/mcp.py` is missing its provided `"headers": GITHUB_HEADERS` line. Put it back |
+| `A workspace ID is required for connection commands` | Set `LANGSMITH_WORKSPACE_ID` in `.env` (step 0, item 5) |
 | Any `mda` command: `LangSmith rejected LANGSMITH_API_KEY … (HTTP 403)` | An old key exported in your shell overrides `.env`. Run `unset LANGSMITH_API_KEY`, or fix it in your shell profile |
 | Run never pauses before the PR | The `interrupt_on` key must be the full `github_create_pull_request` (one underscore) |
 | A skill never loads | Its folder name must match `name:` in the frontmatter, and the `description` must say when to use it |
