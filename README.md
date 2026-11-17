@@ -448,6 +448,8 @@ PR. The approval card shows the title, body, and branch.
 1. If you select **Reject**, no PR opens.
 2. Clicking **Approve** will let the tool carry out, and a new PR will be created. **Click Approve for now**.
 
+If Studio **does not** render a card with buttons and instead asks you to type a response, you can approve with: `{"decisions":[{"type":"approve"}]}` and reject with `{"decisions":[{"type":"reject"}]}`
+
 **You have your first PR,** opened by your deployed agent with a token that
 never touched your code. Open it on GitHub.
 
