@@ -42,8 +42,7 @@ solution/     <- the finished Patch (the answer key). Try each step first, then 
    ```
 
 3. Open `.env` and paste the `ANTHROPIC_API_KEY` provided to you.
-4. The `LANGSMITH_API_KEY` is provisioned by LangSmith. Visit [workspaces.langchain.com](https://workspaces.langchain.com/), fill in the email account associated with your LangSmith account, and set `Workshop Code` to `mda-11-17`, and click `Create workspace`. You will receive an email inviting you to a LangSmith workspace. In LangSmith, visit the Settings page, click `API Keys` on the left menu, and create a new key. Paste the value for `LANGSMITH_API_KEY` in `.env`.
-5. Still on the LangSmith Settings page, copy your **Workspace ID** and paste it as `LANGSMITH_WORKSPACE_ID` in `.env`. The `mda connections` commands in step 3 need it.
+4. Now, you will set `LANGSMITH_API_KEY` and `LANGSMITH_WORKSPACE_ID`. Follow the instructions [here](https://docs.google.com/document/d/1LbPTxpWN6hpZK3dGAfMnDLp0SIV6PFA0rkx9xFwWses/edit?usp=sharing).
 
 
 ### The bug board
